@@ -23,9 +23,9 @@ MLJ(Machine Learning in Julia) is a toolbox written in Julia that provided unifo
 
 Each MLJ model can be tuned with a set of parameters known hyperparameters. Choosing the correct hyperparameter value is critical for optimal model performance. Currently, MLJ provides a satellite package called MLJ-Tuning for automate the hyperparameter tuning process. But the number of optimization algorithms available at MLJ-Tuning is limited. This goal of this proposal is to add Particle Swarm optimization as a new optimization algorithm.
 
-Particle swarm optimization(PSO) is easy to understand optimization algorithm with highly active research community. In this proposal, I'll talk about the simple particle swarm optimization implementation that can handle single variable periodic function. I'll also talk about the possible PSO variants and show examples in Python, R and Julia. Finally I'll mention how PSO can be incorporated into MLJ-Tuning.
+Particle swarm optimization(PSO) is easy to understand optimization algorithm with highly active research community. In this proposal, I'll talk about the simple particle swarm optimization implementation that can handle single variable periodic function. I'll also talk about the possible PSO variants and show examples in Python, R and Julia. Finally I'll mention how PSO can be incorporated into MLJ.
 
-\section{Particle Swarm Optimization in own words}
+\section{Particle Swarm Optimization}
 
 Particle Swarm Optimization is a nature inspired numerical optimization method to minimize a function by generating and manipulating a swarm of particle(that represents possible solutions) and improve those solutions iteratively by simulating the behaviour of a bird flocking or a fish schooling.
 
@@ -59,7 +59,7 @@ In each step of the algorithm, velocity is updated for each particle which is fo
 
 \subsection{Vanilla PSO implementation}
 
-My vanilla PSO implementation can be found here, \cite{irfan_2021J}. This implementation can minimizes a function of single variable. I'll demonstrate my PSO implementation by trying to optimize a single variable function, $f(x) = x^2$. Analytically we know that that the function minimizes at 0.
+My vanilla PSO implementation can be found here, \cite{irfan_2021VJ}. This implementation can minimizes a function of single variable. I'll demonstrate my PSO implementation by trying to optimize a single variable function, $f(x) = x^2$. Analytically we know that that the function minimizes at 0.
 
 We will generate a swarm of 10 particles from -9 to 9 with interval 2. The graph of $f(x)$ is in blue and the swarm are represented as scatter point in unique colors(Iteration 0). The plot is an animation that will show the updated position of each particle on each iteration, from iteration 1 to 25. In the animated plot, we see a lot of oscillation in the first few iterations and the oscillation slowly dies down after each iteration. Note that the particles are starting to converge after 15 iterations.  
 
@@ -67,8 +67,11 @@ This same observation is also evident in the cost history plot. On the x axis of
 
 The values of particle position are also present in Table 1. As we can see that the particles are uniformly distribute at Iteration 0, and starts to converge in first few iterations, and by the 10th iteration they are already very close to our analytical solution. By 25th iteration all particles are very close to 0 - which is what we expect.
 
-\animategraphics[loop,autoplay, width=\linewidth]{1}{./plots/plot}{0}{25}
 \begin{center}
+\animategraphics[loop,autoplay, width=\linewidth]{1}{./plots/plot}{0}{25}
+\end{center}
+\begin{center}
+\noindent\rule{12cm}{0.1pt}
 \includegraphics[width=\linewidth]{./plots/CostHistory.png}
 \end{center}
 
@@ -110,7 +113,7 @@ As we know period functions are function that satisfied the $f(t + T) = f(t)$. I
 \animategraphics[loop,autoplay, width=0.5\linewidth]{1}{./plots/sin/sin_convergence-}{1}{51}
 \animategraphics[loop,autoplay, width=0.5 \linewidth]{1}{./plots/cos/cos-}{1}{26}
 
-\section{PSO Variants}
+\section{PSO Variants - Standard}
 The original paper published in 1995 by Kennedy and Eberhart had the following velocity and position update formula for each particle, 
 \begin{align*}
 v(t+1) &= v(t) + c_1r_1(x_b - x(t)) + c_2r_2(x_g - x(t)) \\
@@ -126,8 +129,8 @@ There is no precise method to chose the range of velocity therefore inertia weig
 \begin{align*} v(t+1) = \boldsymbol{w} v(t) + c_1r_1(x_b - x(t)) + c_2r_2(x_g - x(t))
 \end{align*} and it was also found that the algorithm converges if $w > \frac{1}{2}(c_1 + c_2) - 1$ \cite{van2007analysis}. If w \textgreater 1 then velocities increase over time, accelerating towards maximum velocity. If w \textless 1 the particles decelerate until their reach minimum. Large values of w facilitate exploration and small w facilitate local exploration. Weight could also be dynamically by sampling from Gaussian distribution at each iteration and it could also linearly/non-linearly decreasing over time. Alfi and Fateh presented fuzzy PSO where particle dynamically adjust inertia weight according to particle best memories using non-linear model \cite{alfi2011intelligent}. Inertia weight could not completely eliminate the need for velocity clamping.
 
-
-
+\subsubsection{Inertia Weight Example in R}
+MetaheuristicOpt package in R implements PSO with inertia weight variation. I've ran the optimization function on Rosenbrock $(a =1, b=100)$ and the result of optimization is [0.9996966, 0.9993824] which very close to expected [1,1] \cite{irfan_2021R} Section 1.
 
 \subsection{Velocity}
 
@@ -158,7 +161,7 @@ The performance of PSO strongly depends on how the particles are connected. In a
 
 Suganthan proposed particle neighbour that grows with iteration \cite{suganthan1999particle}. The search is initialized with a local best with number of particle in neighbour set to 2, and increases with each iteration until the the neighbour hood contains the entire swarm. 
 
-\subsubsection{Example in Python}
+\subsubsection{Local best Example in Python}
 PySwarm implements a local best PSO variant that uses ring topology and locality is defined in terms of distance computed using L2(Euclidean) norm. An example uses the implementation with neighbour size set to 3 and L2 distance set to 2 and trying to minimize the Rosenbrock function with $(a = 1, b = 1)$ and the result of the optimization is 0.99 and 0.99 which very close to what we expect. \cite{irfan_2021P}
 
 
@@ -245,9 +248,9 @@ Here $\eta$ is a learning parameter, which can be a static of dynamic based on s
 In this PSO variant the swarm is divided into multiple groups where each groups performs different task or exhibits different behaviour. These tasks and behaviour can be dynamic as well. Individual particles can migrate between sub-swarms as well and multiple swarms can breed new particles.
 
 
-Mohan divided all particles into two sub-swarms of equal size  \cite{al2002multi}. Each swarm can be can be either in attraction phrase, where particles are moving towards the global best ($c_1 = -1$ and $c_2 = 1$), or repulsion state, where particles are moving away from global best ($c_1 = 1$ and $c_2 = -1$). Swarm switch phase when a number of iteration is reached or particles do not show improvements. Cooperation between sub-swarms are achieved through selection of global best particles from each swarm.
+Mohan divided all particles into two sub-swarms of equal size  \cite{al2002multi}. Each swarm can be either in attraction phrase, where particles are moving towards the global best ($c_1 = -1$ and $c_2 = 1$), or repulsion state, where particles are moving away from global best ($c_1 = 1$ and $c_2 = -1$). Swarm switch phase when a number of iteration is reached or particles do not show improvements. Cooperation between sub-swarms are achieved through selection of global best particles from each swarm.
 
-\subsection{Adaptive}
+\subsection{Adaptive PSO}
 Adaptive PSO was proposed where algorithm parameter are tuned automatically using the evolutionary state which is combined with auxiliary search operators. Evolution state refers to the general behaviour of a particle throughout the algorithm. For example, at an early stage, the particles may be scattered in various
 areas, and, hence, the population distribution is sparse. As the evolutionary process goes on particle would cluster up and converge to local or global minimum hence the population distribution would be different at this evolutionary stage. 
 
@@ -262,8 +265,8 @@ Besides dynamically setting the inertia coefficient, the acceleration  coefficie
 \end{enumerate}
  Also, the global best particle is perturbed by a sample from Gaussian distribution whose variance is linearly decreasing with iteration.
 
-\subsubsection{Adaptive Example in Julia}
-Rosenbrock function with $a = 1$ and $b=1$ is minimized using adaptive PSO which is available with Optim library written in Julia \cite{irfan_2021J} Section 2. The result of the optimization is $a=1$ and $b=1$ which is what we expect.
+\subsubsection{Adaptive PSO Example in Julia}
+Rosenbrock function with $a = 1$ and $b=1$ is minimized using adaptive PSO which is available with Optim library written in Julia \cite{irfan_2021OJ} Section 2. The result of the optimization is $a=1$ and $b=1$ which is what we expect.
 
 \subsection{Discrete PSO}
 2 years after the original publication Kennedy \cite{kennedy1997discrete} published a discrete binary version of PSO where the space the particles will explore are discrete. In this variant we need to have particles in power of 2. Particles are defined as neighbour if the Hamming distance between the bit representation of their indices is one \cite{abdelbar2003swarm}. In this modification the velocity update equation remains the same, except the position of particles are represented by 0s and 1s, and the velocity is clamped between [0, 1] which is achieved via logistic transformation $S(v_t) = \frac{1}{1 - e^{v_t}}$. The position update expression was updated,
@@ -276,7 +279,7 @@ x(t+1) =
 \end{equation}
 A popular particle swarm optimization Python library is PySwarm that implements discrete PSO.\cite{pyswarms.discrete}
 
-\subsection{Multi-objectives}
+\subsection{Multi-objectives PSO}
  
 By dynamically updating particle neighbourhood and calculating local best particle position, PSO can be used to address problem that involves multiple objective function. We are interested in generating the Pareto front, which is a set of Pareto optimal solution where it is not possible to improve one objective function without worsening at least one other objective function.
 
@@ -290,7 +293,7 @@ is defined as follows:
     \item Find the local optima among the neighbors in terms of the fitness value of the second objective function.
 \end{enumerate}
 
-\subsubsection{Multi-objective Example in R}
+\subsubsection{Multi-objective PSO Example in R}
 MOPSO-CD is a variant of multi-objective PSO that uses crowding distance(CD) computation to ensure an even spread of non-dominated solutions. Here in an example in R optimizing Viennet  function\cite{irfan_2021R} Section 2.
 
 \subsection{Constrains}
@@ -305,12 +308,80 @@ Particles might move to region that is not feasible, and PSO variants were devel
 \subsubsection{Constrain Example in R}
 An example in written in R that is running PSO with inertia weight on 1 objective function and 4 constrains. Each time the particle position do no satisfy constrain, a penalty value (1000) is added to it \cite{irfan_2021R} Section 3.
 
-\section{Show usage of MLJ Library}
-\textit{Show usage of MLJ Library}
-\textit{What for example might be incuded in the state object that gets passed around by the various methods (the API is basically “functional” in style)?}
+\section{PSO Standardization Effort}
+As we've seen there is no correct way to implement PSO. To streamline the PSO literature a standardization body has developed Standard Particle Swarm Optimisation standard(SPSO). Since 2006 there has been 3 successive standards namely SPSO 2006, 2007 and 2011. PSO formula for each standard is slightly different because they took advantage of latest theoretical analysis as that time \cite{clerc:hal-00764996}.
+
+\section{Existing Implementations of PSO}
+A gold standard of any algorithm is the amount of people using it. As more people use the same implementation, the bugs are ironed out over time making the implementation more reliable. Therefore it is important to find an existing implementation in an existing library before re-implementing it in a new language. In this section I'll explore existing implementation of Particle Swarm algorithm that's part of a larger library.
+
+\subsection{C++}
+\begin{enumerate}
+    \item \textbf{OptimLib} is a library for optimizing non-linear function. This library has two PSO variants, PSO with dynamic inertia weight and and PSO with differentially-perturbed Velocity. I could not locate the source of the algorithm \cite{ohara}.
+    \item \textbf{PaGMO} is scientific library for massively parallel optimization and it contains PSO variant with non dominant sorting and self-adaptive differential evolution(NSPSO). Source paper of the algorithm is available on their website\cite{Biscani2020}
+\end{enumerate}
+
+\subsection{Python}
+Despite being the most popular scientific library Sciki-optimize and Scipy do not have PSO implemented in their optimization module \cite{scipy}. But I was able to find other library that is either dedicate for swarm algorithms or include PSO. We can use PySwarm with SKLearn to tune hyperparameter for machine learning models.
+
+\begin{enumerate}
+    \item \textbf{Pymoo} is a multi objective optimization library that implements vanilla PSO with global best perturbation \cite{pymoo}.
+    \item \textbf{PyGMO} is another multi objective optimization library that is a python wrapper for the aforementioned C++ library PaGMO.
+    \item \textbf{PySwarm} is an extensible research toolkit for particle swarm optimization library. It supports continuous and discrete search space. An example using PySwarm is available in section 3.3.1
+\end{enumerate}
+
+
+\subsection{R}
+\begin{enumerate}
+    \item \textbf{Automl} package fits from simple regression to  deep neural networks either with gradient descent or metaheuristic, using automatic hyper parameters tuning and custom cost function \cite{automl}. Their official documentation also includes content on hyperparameter tuning using PSO \cite{automlpso}.
+    \item \textbf{metaheuristicOpt} package implements PSO with inertia weight variant \cite{metaheuristicOpt}. An example is implemented in section 3.1.1  in this proposal.
+\end{enumerate}
+
+\subsection{Julia}
+\begin{enumerate}
+    \item \textbf{Optim.jl} implement PSO variant with Adaptive PSO. The algorithm is briefly explained in section 4.7 in this proposal with an example on section 4.7.1.
+    \item \textbf{Manopt.jl} is an optimization on Manifolds in Julia. This PSO variant includes a gradient component. The operations involved in the PSO algorithm are redefined using concepts of differential geometry \cite{10.1007/978-3-642-15461-4_2}.
+\end{enumerate}
+
+\section{Machine Learning for Julia(MLJ) Library}
+MLJ is a library that aggregates implementations of machine learning algorithm from other library. Julia type system allows MLJ to introduced new features such as model pipelining. This library also provides scientific type which allows specific interpretation of the data instead of how the data is encoded. There are 4 scalar scientific type. OrderedFactor and Multiclass for categorical data and Continuous and Count for non-categorical data. These scientific types allow MLJ models to specify what kinds of data fits a model which allows user to query an appropriate model.
+
+An example of MLJ is shows by training a logistic model to predict outcome of a house after it was diagnosed and treated. This example demonstrates the most basic structure of MLJ. We start by setting the appropriate scientific type of the data(line 7 - 12), and then we instantiate Logistic regression model using the default parameters. Each model is essentially a named tuple and we can input scitype and target scitype to find the type of data it is expecting. After model initialization and accepting all default hyperparameter value, one of the hyperparameter was changed to 100 in line 23.
+
+Once we have a model instance and our data ready, we bind them together into a notion called machine. The machine is responsible for saving the trained model information one the model is trained on the data. For example, in case of linear regression the machine would hold the values of regression coefficient and any other custom parameters.
+
+This step is followed by fitting the data line 26. This is the most time consuming part of the process. The model is trained using the training dataset and the trained model is saved at the machine object. We can use the predict method, which takes the machine object and test data and returns prediction line 27. We can compare the prediction with the original dataset to find the accuracy of the model line 28.
+
+We use measures to measure the performance of our prediction. We can call measures to see all the list of measures available.
+
+\subsection{Hyperparameter Tuning}
+But a given model could perform better we tune it's hyperparameters. We can use the Learning Curve function to test the model's hyperparameter over a range against some measure(i.e. cross entropy). It we want to tune multiple hyperparmeter from a composite model, MLJ provides TunedModel struct what accepts a range of hyperparameter, a measure and tuing strategy.
+
+Currently supported tuning strategy are, 
+\begin{enumerate}
+    \item search models generated by an arbitrary iterator
+    \item  grid search 
+    \item Latin hypercubes
+    \item random search
+    \item structured tree Parzen estimators
+\end{enumerate}
+
+The goal of this proposal is to implement a new tuning strategy called Particle Swarm Optimization. To do that we need add a new algorithm to src/strategies or by importing MLJTuning into a third party package or by implementing MLJTuning's Tuning Strategy Inferface.
+
+\subsection{Implementing new tuning Strategy}
+
+Each tuning algorithm must define a subtype of TuningStrategy.
+
+All tuning are implemented as an iterative procedure.
+
+
+
+
+
+
+\textit{What for example might be included in the state object that gets passed around by the various methods (the API is basically “functional” in style)?}
 
 \section{Pre-GSoC and Deliverable}
-The aim of the project is to investigate and implement PSO and it's variants to MLJ-Tuning library and document them thoroughly. So far I've implemented a simple PSO and extensively studies many PSO variants published in the last 25 years. I've also familiarized myself with MLJ and MLJ-Tuning. At the beginning of Summer, I will start by implementing a vanilla single variable PSO and test it with simple models(i.e. Simple/Multiple Linear regression). From there we can take it in many different routes. For example, we can look into modify single variable PSO for dynamic weight and acceleration coefficient. We can also add setting that allows the use to change the particle connectivity and life cycle. Beyond single object optimization, we can also look into multi object, multi constrain and both multi objective and multi constrain PSO.
+The aim of the project is to investigate and implement PSO and it's variants to MLJ library and document them thoroughly. So far I've implemented a simple PSO and extensively studies many PSO variants published in the last 25 years. I've also familiarized myself with MLJ. At the beginning of Summer, I will start by implementing a vanilla single variable PSO and test it with simple models(i.e. Simple/Multiple Linear regression). From there we will take it in different directions. For example, we will include dynamic weight and acceleration coefficient variant. We will also add setting that allows the use to change the particle connectivity and life cycle. Beyond single object optimization, we will also look into multi object PSO, multi constrain PSO and both multi objective and multi constrain PSO. For example will will implement non dominated sorting PSO variant for multi object optimization since this algorithm is also implemented in other language libraries.
 
 I'll also document the code thoroughly. I'll run my implementations on well known test functions to test for the accuracy of my implementation. Currently MLJ has 162 model in it's repository and PSO has numerous variants. My goal is to implement as many PSO algorithms as possible to cover a wide range of PSO variants.
 
