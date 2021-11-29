@@ -76,8 +76,8 @@ The values of particle position are also present in Table 1. As we can see that 
 \end{center}
 
 \begin{center}
-\begin{tabular}{ |c|c|c|c|c|c|c|c|c| } 
 
+\begin{tabular}{ |c|c|c|c|c|c|c|c|c| } 
 \hline
 Init(0) & 1 & 2 & ... & 5 & ... & 10 & ... & 25\\
 \hline
@@ -93,6 +93,8 @@ Init(0) & 1 & 2 & ... & 5 & ... & 10 & ... & 25\\
  9.47 & -1.68 & -1.68 & ... &  0.08 & ... &   0.08 & ... &  0.0023\\ 
 \hline
 \end{tabular}
+
+
 \end{center}
 
 \subsection{Assumptions in vanilla PSO implementation}
@@ -227,7 +229,7 @@ It was found that social only model is faster and more efficient than full model
 Selfless model is similar to social model, but instead of using global best, local best is used. Kennedy showed that selfless model to be faster than social only model for few problem \cite{kennedy1997particle}.
 
 \section{PSO Variants - Advanced}
-So far we've the PSO variants we've described contain single objective, unconstrained and static. There are other variants that modified PSO extensively. For example, in some PSO variants both the velocity and position updates rules are substitute. In a variant both rules are substituted by a procedure that samples from a parametric probability density function such as a Gaussian distribution. Adaptive variant of this algorithm changes the standard deviation of the Gaussian distribution. The update rule of PSO can also be modified to a second order stochastic difference equation by Blackwell \cite{blackwell2011study}. But some researchers, instead of making the process complex, wanted to simplify standard PSO. For example, Guochu divided the swarm into three categories, better, ordinary and worst particles according to some fitness value \cite{chen2010simplified}.
+All variants mentioned so far can be implemented by slightly modifying my vanilla PSO implementation. But so far the PSO variants we've described contain single objective, unconstrained and static. There are other variants that modified PSO extensively. For example, in some PSO variants both the velocity and position updates rules are substitute. In a variant both rules are substituted by a procedure that samples from a parametric probability density function such as a Gaussian distribution. Adaptive variant of this algorithm changes the standard deviation of the Gaussian distribution. The update rule of PSO can also be modified to a second order stochastic difference equation by Blackwell \cite{blackwell2011study}. But some researchers, instead of making the process complex, wanted to simplify standard PSO. For example, Guochu divided the swarm into three categories, better, ordinary and worst particles according to some fitness value \cite{chen2010simplified}.
 
 In this section we will talk about PSO variants that are fused with other algorithms, contains multiple objective function and constrained.
 
@@ -343,42 +345,26 @@ Despite being the most popular scientific library Sciki-optimize and Scipy do no
 \end{enumerate}
 
 \section{Machine Learning for Julia(MLJ) Library}
-MLJ is a library that aggregates implementations of machine learning algorithm from other library. Julia type system allows MLJ to introduced new features such as model pipelining. This library also provides scientific type which allows specific interpretation of the data instead of how the data is encoded. There are 4 scalar scientific type. OrderedFactor and Multiclass for categorical data and Continuous and Count for non-categorical data. These scientific types allow MLJ models to specify what kinds of data fits a model which allows user to query an appropriate model.
+MLJ is a toolbox that aggregates implementations of machine learning algorithm and provides a common and consistent interface for the user. Julia type system allows MLJ to introduced new features such as model pipelining which allows ease in multi model setup. This library also provides scientific type which allows specific interpretation of the data instead of relying on binary encoding. There are 4 scalar scientific type: OrderedFactor and Multiclass for categorical data and Continuous and Count for non-categorical data. These scientific types makes it easy to find an appropriate model for a given data-set.
 
-An example of MLJ is shows by training a logistic model to predict outcome of a house after it was diagnosed and treated. This example demonstrates the most basic structure of MLJ. We start by setting the appropriate scientific type of the data(line 7 - 12), and then we instantiate Logistic regression model using the default parameters. Each model is essentially a named tuple and we can input scitype and target scitype to find the type of data it is expecting. After model initialization and accepting all default hyperparameter value, one of the hyperparameter was changed to 100 in line 23.
+An example of MLJ is shows by training a logistic model to predict outcome of a house after it was diagnosed and treated. This example demonstrates the most basic structure of MLJ \cite{irfan_2021OMLJ}. We start by setting the appropriate scientific type of the data(line 7 - 12), and then we instantiate Logistic regression model using the default parameters. Each model is essentially a named tuple and we can query input scitype and target scitype to find the type of data the model is expecting. After model initialization and one of the hyperparameter was changed to 100 in line 23. 
 
-Once we have a model instance and our data ready, we bind them together into a notion called machine. The machine is responsible for saving the trained model information one the model is trained on the data. For example, in case of linear regression the machine would hold the values of regression coefficient and any other custom parameters.
-
-This step is followed by fitting the data line 26. This is the most time consuming part of the process. The model is trained using the training dataset and the trained model is saved at the machine object. We can use the predict method, which takes the machine object and test data and returns prediction line 27. We can compare the prediction with the original dataset to find the accuracy of the model line 28.
-
-We use measures to measure the performance of our prediction. We can call measures to see all the list of measures available.
+Once we have a model instance and our data ready, we bind them together into a machine. The machine is responsible for saving the trained model information. For example, in case of linear regression the machine would hold the values of regression coefficient. This step is followed by training the model in line 26 using the fit function. Once we have a trained model we can use our test data to predict the accuracy of the model in line 27. We compared the prediction with the original data set to find the accuracy of the model in line 28.
 
 \subsection{Hyperparameter Tuning}
-But a given model could perform better we tune it's hyperparameters. We can use the Learning Curve function to test the model's hyperparameter over a range against some measure(i.e. cross entropy). It we want to tune multiple hyperparmeter from a composite model, MLJ provides TunedModel struct what accepts a range of hyperparameter, a measure and tuing strategy.
-
-Currently supported tuning strategy are, 
+A given model could perform better we tune it's hyperparameters. We can use the LearningCurve function to test the model performance over a range of hyperparameters against some measure(i.e. cross entropy, root mean square, brier score etc). To tune multiple hyperparameters for a composite model, MLJ provides TunedModel struct which accepts a range of hyperparameter, a measure and tuning strategy. Currently the following tuning strategies are available,
 \begin{enumerate}
     \item search models generated by an arbitrary iterator
-    \item  grid search 
+    \item grid search 
     \item Latin hypercubes
     \item random search
     \item structured tree Parzen estimators
 \end{enumerate}
 
-The goal of this proposal is to implement a new tuning strategy called Particle Swarm Optimization. To do that we need add a new algorithm to src/strategies or by importing MLJTuning into a third party package or by implementing MLJTuning's Tuning Strategy Inferface.
+The goal of this proposal is to implement a new tuning strategy called Particle Swarm Optimization.
 
 \subsection{Implementing new tuning Strategy}
-
-Each tuning algorithm must define a subtype of TuningStrategy.
-
-All tuning are implemented as an iterative procedure.
-
-
-
-
-
-
-\textit{What for example might be included in the state object that gets passed around by the various methods (the API is basically “functional” in style)?}
+To implement a new tuning strategy we need add a new algorithm to MLJ Tuning src/strategies or by implementing MLJTuning's Tuning Strategy Interface with defaults. Tuning in MLJ is an iterative process. At each iteration performance of a model is evaluated. When all iteration of the algorithm are complete, the optimal model is selected by some selection heuristic to a history generated according to a specific tuning strategy. The fields of a tuning strategy are called tuning hyperparameters and they control the tuning strategy. Selection heuristic is a rule which decides on the "best model" given the model evaluations in the tuning history \cite{turing}.
 
 \section{Pre-GSoC and Deliverable}
 The aim of the project is to investigate and implement PSO and it's variants to MLJ library and document them thoroughly. So far I've implemented a simple PSO and extensively studies many PSO variants published in the last 25 years. I've also familiarized myself with MLJ. At the beginning of Summer, I will start by implementing a vanilla single variable PSO and test it with simple models(i.e. Simple/Multiple Linear regression). From there we will take it in different directions. For example, we will include dynamic weight and acceleration coefficient variant. We will also add setting that allows the use to change the particle connectivity and life cycle. Beyond single object optimization, we will also look into multi object PSO, multi constrain PSO and both multi objective and multi constrain PSO. For example will will implement non dominated sorting PSO variant for multi object optimization since this algorithm is also implemented in other language libraries.
@@ -387,11 +373,13 @@ I'll also document the code thoroughly. I'll run my implementations on well know
 
 
 \section{Biographical Information}
-My name is Quazi Irfan, and I am a graduate student studying at South Dakota State University. I am graduating this Summer 2021. I did my undergraduate in Computer Science and have extensive programming experience. I mostly programmed in C++, Java, Python and R. I've recently moved to Julia because a high level language with low level performance is very appealing to me. So far, I have studied Algorithm analysis and Design, Programming Language, Compiler Design, Statistical Inference, Regression, Multivariate Statistics and Linear Algebra to name a few. Currently I am working on my thesis on robot localization using inertial navigation system.
+My name is Quazi Irfan, and I am a graduate student studying at South Dakota State University. I am graduating this Summer 2021. I did my undergraduate in Computer Science and have extensive programming experience. I mostly programmed in C++, Java, Python and R. I've recently moved to Julia because a high level language with low level performance is very appealing to me. So far, I have studied Algorithm analysis and Design, Programming Language, Compiler Design, Statistical Inference, Regression, Multivariate Statistics and Linear Algebra to name a few. Currently I am working on my thesis on robot localization using inertial navigation system where I am extensively studying signal processing. I have briefly studies meta-heuristics algorithm in my Algorithms course. I have not taken any course named Machine Learning, but I am familier with ML topic via osmosis. Because I've had course that went over Linear and Polynomial regression, Classification(LDA, QDA, KNN), Re-sampling method(Cross validation, Bootstrap), Linear model selection(Ridge, LASSO, PCR), Tree based methods, SVM and unsupervised learning.
 
-I've implemented a working compiler for a subset of Ada language \cite{quazi_2021}, and lead the Robotics club software team where we've implemented a path finding algorithm for the robot \cite{irfan}. In the past, I have worked as a research assistant where I had to debug a very old code base written in Java. I also did undergraduate research on building haptic feedback gloves for virtual reality \cite{irfan2018building}. I've also contributed to open source project(jMonkeyGame Engine) in the past, and strongly familiar with Git and Github workflow.
+Beyond course work, I've implemented a working compiler for a subset of Ada language \cite{quazi_2021}, and lead the Robotics club software team where we've implemented a path finding algorithm for the robot \cite{irfan}. In the past, I have worked as a research assistant where I had to debug a very old code base written in Java. I also did undergraduate research on building haptic feedback gloves for virtual reality \cite{irfan2018building}. I've also contributed to open source project(jMonkeyGame Engine) in the past, and strongly familiar with Git and Github workflow.
 
 I am a highly motivated self learner, and I am confident that I'll be able to solve a problem within a reasonable time given I have proper background knowledge and reading the right resource.
+
+Note: I am taking only one research credit this summer, so I'll have wide availability to work on GSoC project. I am planning to spend 20 hours per week or more if needed. I will always available through slack/email/phone.
 
 \pagebreak
 \printbibliography
